@@ -30,12 +30,14 @@ class Program
     static void transcodeToOpus(string input, string output)
     {
         FFMpegArguments
-            .FromFileInput(input)
-            .OutputToFile(output, false, options => options
+            .FromFileInput(input, true)
+            .OutputToFile(output, true, options => options
+                .SelectStream(0)
                 .WithAudioCodec(FFMpeg.GetCodec("libopus"))
+                .WithVariableBitrate(0)
+                .WithAudioBitrate(16)
             )
         .ProcessSynchronously();
-        // Console.WriteLine(a.Duration.TotalMilliseconds);
         Console.WriteLine($"Input: {input}");
         Console.WriteLine($"Output: {output}");
         return;
