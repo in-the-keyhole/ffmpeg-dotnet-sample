@@ -27,4 +27,11 @@ class Program
         Console.WriteLine(a.Duration.TotalMilliseconds);
         return;
     }
+
+        static void LengthOfAudioFile(byte[] audioBytesIn)
+    {
+        var a = FFProbe.Analyse(new MemoryStream(audioBytesIn));
+        Console.WriteLine(a.Duration.TotalMilliseconds);
+        return;
+    }
 }
