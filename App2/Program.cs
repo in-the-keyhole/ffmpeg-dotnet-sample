@@ -17,13 +17,13 @@ class Program
         rootCommand.AddOption(outputFile);
 
         // write to file from ffmpeg
-    //    rootCommand.SetHandler((input, output) =>
-    //         {
-    //             transcodeToOpus(input!, output!);
-    //         },
-    //         inputFile,
-    //         outputFile
-    //     );
+        //    rootCommand.SetHandler((input, output) =>
+        //         {
+        //             transcodeToOpus(input!, output!);
+        //         },
+        //         inputFile,
+        //         outputFile
+        //     );
 
         // write to stream from ffmpeg, then to file
         rootCommand.SetHandler( (input, output) =>
@@ -31,7 +31,7 @@ class Program
                 var inputStream = new FileStream(input!, FileMode.Open, FileAccess.Read);
 
                 var outputStream = transcodeToOpusStream(inputStream);
-                
+
                 // write to outputFile
                 File.WriteAllBytes(output!, outputStream.ToArray());
 
@@ -42,6 +42,26 @@ class Program
             inputFile,
             outputFile
         );
+
+        // write to byte[] from ffmpeg, then to file
+        // rootCommand.SetHandler((input, output) =>
+        //     {
+        //         var inputStream = new FileStream(input!, FileMode.Open, FileAccess.Read);
+
+        //         // Put the file into a buffer for processing.
+        //         // This is just for the example - not recommended.
+        //         byte[] inputBuffer = new byte[(int)inputStream.Length];
+        //         inputStream.Read(inputBuffer);
+        //         inputStream.Close(); // The bytes could have come from anywhere.
+
+        //         var outputStream = transcodeToOpusBytes(inputBuffer);
+
+        //         // write to outputFile
+        //         File.WriteAllBytes(output!, outputStream.ToArray());
+        //     },
+        //     inputFile,
+        //     outputFile
+        // );
 
         return await rootCommand.InvokeAsync(args);
     }
@@ -72,7 +92,7 @@ class Program
 
         var outputStream = new MemoryStream();
         var sink = new StreamPipeSink(outputStream);
-        
+
         FFMpegArguments
             .FromPipeInput(source)
             .OutputToPipe(sink, options => options
@@ -81,7 +101,7 @@ class Program
                 .WithVariableBitrate(0)
                 .WithAudioBitrate(16)
                 .WithCustomArgument("-application voip")
-                .ForceFormat("webm") // Some reason this works
+                .ForceFormat("webm")
             )
         .ProcessSynchronously();
         return outputStream;
@@ -92,7 +112,7 @@ class Program
     {
         var source = new StreamPipeSource(inputStream);
         var sink = new StreamPipeSink(outputStream);
-        
+
         FFMpegArguments
             .FromPipeInput(source)
             .OutputToPipe(sink, options => options
@@ -101,8 +121,31 @@ class Program
                 .WithVariableBitrate(0)
                 .WithAudioBitrate(16)
                 .WithCustomArgument("-application voip")
-                .ForceFormat("webm") // Some reason this works
+                .ForceFormat("webm")
             )
         .ProcessSynchronously();
+    }
+
+    // In case we want to focus on byte[] for both input and output
+    static byte[] transcodeToOpusBytes(byte[] input)
+    {
+        Stream inputStream = new MemoryStream(input);
+        var source = new StreamPipeSource(inputStream);
+
+        var outputStream = new MemoryStream();
+        var sink = new StreamPipeSink(outputStream);
+
+        FFMpegArguments
+            .FromPipeInput(source)
+            .OutputToPipe(sink, options => options
+                .SelectStream(0)
+                .WithAudioCodec(FFMpeg.GetCodec("libopus"))
+                .WithVariableBitrate(0)
+                .WithAudioBitrate(16)
+                .WithCustomArgument("-application voip")
+                .ForceFormat("webm")
+            )
+        .ProcessSynchronously();
+        return outputStream.ToArray();
     }
 }
