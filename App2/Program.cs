@@ -26,12 +26,17 @@ class Program
     //     );
 
         // write to stream from ffmpeg, then to file
-        rootCommand.SetHandler((input, output) =>
+        rootCommand.SetHandler( (input, output) =>
             {
-                // transcodeToOpus(input!, output!);
-                MemoryStream s = transcodeToOpusStream(input!);
+                var inputStream = new FileStream(input!, FileMode.Open, FileAccess.Read);
+
+                var outputStream = transcodeToOpusStream(inputStream);
+                
                 // write to outputFile
-                // File.WriteAllBytes(outputFile.ToString(), s.ToArray());
+                File.WriteAllBytes(output!, outputStream.ToArray());
+
+                inputStream.Close();
+                outputStream.Close();
 
             },
             inputFile,
@@ -43,36 +48,64 @@ class Program
 
     static void transcodeToOpus(string input, string output)
     {
+        var inputStream = new FileStream(input, FileMode.Open, FileAccess.Read);
+        var inputPipe = new StreamPipeSource(inputStream);
         FFMpegArguments
-            .FromFileInput(input, true)
+            .FromPipeInput(inputPipe)
             .OutputToFile(output, true, options => options
                 .SelectStream(0)
                 .WithAudioCodec(FFMpeg.GetCodec("libopus"))
                 .WithVariableBitrate(0)
                 .WithAudioBitrate(16)
+                // Not sure what "-application voip" from the reference is meant to do
+                // .WithCustomArgument("-application voip")
             )
         .ProcessSynchronously();
+        inputStream.Close();
         Console.WriteLine($"Input: {input}");
         Console.WriteLine($"Output: {output}");
         return;
     }
 
-    static MemoryStream transcodeToOpusStream(string input)
+    static MemoryStream transcodeToOpusStream(FileStream inputStream)
     {
+        var source = new StreamPipeSource(inputStream);
+
         var outputStream = new MemoryStream();
+        var sink = new StreamPipeSink(outputStream);
         
         FFMpegArguments
-            .FromFileInput(input, true)
-            .OutputToPipe(new StreamPipeSink(outputStream), options => options
+            .FromPipeInput(source)
+            .OutputToPipe(sink, options => options
                 .SelectStream(0)
                 .WithAudioCodec(FFMpeg.GetCodec("libopus"))
                 .WithVariableBitrate(0)
                 .WithAudioBitrate(16)
+                // Not sure what "-application voip" from the reference is meant to do
+                // .WithCustomArgument("-application voip")
+                .ForceFormat("webm") // Some reason this works
             )
         .ProcessSynchronously();
-        Console.WriteLine($"Input: {input}");
-        
-    
         return outputStream;
+    }
+
+    // In case we want to provide a stream for both input and output
+    static void transcodeToOpusStream(FileStream inputStream, MemoryStream outputStream)
+    {
+        var source = new StreamPipeSource(inputStream);
+        var sink = new StreamPipeSink(outputStream);
+        
+        FFMpegArguments
+            .FromPipeInput(source)
+            .OutputToPipe(sink, options => options
+                .SelectStream(0)
+                .WithAudioCodec(FFMpeg.GetCodec("libopus"))
+                .WithVariableBitrate(0)
+                .WithAudioBitrate(16)
+                // Not sure what "-application voip" from the reference is meant to do
+                // .WithCustomArgument("-application voip")
+                .ForceFormat("webm") // Some reason this works
+            )
+        .ProcessSynchronously();
     }
 }
