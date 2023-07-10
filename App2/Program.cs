@@ -57,8 +57,7 @@ class Program
                 .WithAudioCodec(FFMpeg.GetCodec("libopus"))
                 .WithVariableBitrate(0)
                 .WithAudioBitrate(16)
-                // Not sure what "-application voip" from the reference is meant to do
-                // .WithCustomArgument("-application voip")
+                .WithCustomArgument("-application voip")
             )
         .ProcessSynchronously();
         inputStream.Close();
@@ -81,8 +80,7 @@ class Program
                 .WithAudioCodec(FFMpeg.GetCodec("libopus"))
                 .WithVariableBitrate(0)
                 .WithAudioBitrate(16)
-                // Not sure what "-application voip" from the reference is meant to do
-                // .WithCustomArgument("-application voip")
+                .WithCustomArgument("-application voip")
                 .ForceFormat("webm") // Some reason this works
             )
         .ProcessSynchronously();
@@ -102,8 +100,7 @@ class Program
                 .WithAudioCodec(FFMpeg.GetCodec("libopus"))
                 .WithVariableBitrate(0)
                 .WithAudioBitrate(16)
-                // Not sure what "-application voip" from the reference is meant to do
-                // .WithCustomArgument("-application voip")
+                .WithCustomArgument("-application voip")
                 .ForceFormat("webm") // Some reason this works
             )
         .ProcessSynchronously();
