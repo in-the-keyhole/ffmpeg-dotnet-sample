@@ -86,7 +86,7 @@ class Program
         return;
     }
 
-    static MemoryStream transcodeToOpusStream(FileStream inputStream)
+    static MemoryStream transcodeToOpusStream(Stream inputStream)
     {
         var source = new StreamPipeSource(inputStream);
 
@@ -108,7 +108,7 @@ class Program
     }
 
     // In case we want to provide a stream for both input and output
-    static void transcodeToOpusStream(FileStream inputStream, MemoryStream outputStream)
+    static void transcodeToOpusStream(Stream inputStream, MemoryStream outputStream)
     {
         var source = new StreamPipeSource(inputStream);
         var sink = new StreamPipeSink(outputStream);

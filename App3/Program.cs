@@ -1,4 +1,4 @@
-﻿namespace App2;
+﻿namespace App3;
 using System;
 using System.CommandLine;
 using FFMpegCore;
@@ -29,8 +29,8 @@ class Program
         var s1 = new MemoryStream(audioBytesIn);
         var options = new FFOptions();
         options.LogLevel = FFMpegCore.Enums.FFMpegLogLevel.Debug;
-        options.TemporaryFilesFolder = "/tmp";
-        options.WorkingDirectory = "/tmp";
+        // options.TemporaryFilesFolder = "/tmp";
+        // options.WorkingDirectory = "/tmp";
 
         var a = FFProbe.Analyse(s1, options);
         Console.WriteLine(a.Duration.TotalMilliseconds);
