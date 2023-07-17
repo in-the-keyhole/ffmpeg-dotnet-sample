@@ -26,18 +26,31 @@ class Program
         //     );
 
         // write to stream from ffmpeg, then to file
-        rootCommand.SetHandler( (input, output) =>
+        rootCommand.SetHandler((input, output) =>
             {
                 var inputStream = new FileStream(input!, FileMode.Open, FileAccess.Read);
 
                 var outputStream = transcodeToOpusStream(inputStream);
 
+
                 // write to outputFile
                 File.WriteAllBytes(output!, outputStream.ToArray());
+                // var outputFileStream = new FileStream(output!, FileMode.Create, FileAccess.ReadWrite);
+                // outputStream.CopyTo(outputFileStream);
+                // outputFileStream.Flush();
+                // outputFileStream.Position = 0;
+
+                // Now that we have an output file, check the duration of the output file
+
+                // Attempts to use output did not work for me -- using input file for analysis.
+                Console.WriteLine($"Attempting to analyze {input}");
+                var analysis = FFProbe.Analyse(input!);
+
+                Console.WriteLine(analysis.Duration);
+                Console.WriteLine(analysis.Duration.TotalMilliseconds);
 
                 inputStream.Close();
                 outputStream.Close();
-
             },
             inputFile,
             outputFile
