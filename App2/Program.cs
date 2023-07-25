@@ -8,7 +8,7 @@ class Program
 {
     static async Task<int> Main(string[] args)
     {
-        var rootCommand = new RootCommand("Sample app for determining the length of an audio file in milliseconds");
+        var rootCommand = new RootCommand("Sample app for transcoding an audio file to opus");
 
         var inputFile = new Option<string?>(name: "-in", description: "The audio file to be processed.");
         rootCommand.AddOption(inputFile);
@@ -25,56 +25,25 @@ class Program
         //         outputFile
         //     );
 
-        // write to stream from ffmpeg, then to file
+        // write to byte[] from ffmpeg, then to file
         rootCommand.SetHandler((input, output) =>
             {
                 var inputStream = new FileStream(input!, FileMode.Open, FileAccess.Read);
 
-                var outputStream = transcodeToOpusStream(inputStream);
-
-
-                // write to outputFile
-                File.WriteAllBytes(output!, outputStream.ToArray());
-                // var outputFileStream = new FileStream(output!, FileMode.Create, FileAccess.ReadWrite);
-                // outputStream.CopyTo(outputFileStream);
-                // outputFileStream.Flush();
-                // outputFileStream.Position = 0;
-
-                // Now that we have an output file, check the duration of the output file
-
-                // Attempts to use output did not work for me -- using input file for analysis.
-                Console.WriteLine($"Attempting to analyze {input}");
-                var analysis = FFProbe.Analyse(input!);
-
-                Console.WriteLine(analysis.Duration);
-                Console.WriteLine(analysis.Duration.TotalMilliseconds);
-
+                // Put the file into a buffer for processing.
+                // This is just for the example - not recommended.
+                byte[] inputBuffer = new byte[(int)inputStream.Length];
+                inputStream.Read(inputBuffer);
                 inputStream.Close();
-                outputStream.Close();
+
+                var outputStream = transcodeToOpusBytes(inputBuffer);
+
+                File.WriteAllBytes(output!, outputStream.ToArray());
+                Console.WriteLine($"Successfully wrote to file: {output!}");
             },
             inputFile,
             outputFile
         );
-
-        // write to byte[] from ffmpeg, then to file
-        // rootCommand.SetHandler((input, output) =>
-        //     {
-        //         var inputStream = new FileStream(input!, FileMode.Open, FileAccess.Read);
-
-        //         // Put the file into a buffer for processing.
-        //         // This is just for the example - not recommended.
-        //         byte[] inputBuffer = new byte[(int)inputStream.Length];
-        //         inputStream.Read(inputBuffer);
-        //         inputStream.Close(); // The bytes could have come from anywhere.
-
-        //         var outputStream = transcodeToOpusBytes(inputBuffer);
-
-        //         // write to outputFile
-        //         File.WriteAllBytes(output!, outputStream.ToArray());
-        //     },
-        //     inputFile,
-        //     outputFile
-        // );
 
         return await rootCommand.InvokeAsync(args);
     }

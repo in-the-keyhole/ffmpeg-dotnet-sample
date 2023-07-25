@@ -11,9 +11,4 @@
     <PackageReference Include="FFMpegCore" Version="5.1.0" />
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
   </ItemGroup>
-
-<!-- In case the FFMpegCore used for testing is local -->
-  <!-- <ItemGroup>
-    <ProjectReference Include="..\..\FFMpegCore\FFMpegCore\FFMpegCore.csproj" />
-  </ItemGroup> -->
 </Project>

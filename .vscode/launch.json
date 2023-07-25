@@ -5,15 +5,48 @@
             // Use IntelliSense to find out which attributes exist for C# debugging
             // Use hover for the description of the existing attributes
             // For further information visit https://github.com/dotnet/vscode-csharp/blob/main/debugger-launchjson.md
-            "name": ".NET Core Launch (console)",
+            "name": "App 1 (Analyze file)",
             "type": "coreclr",
             "request": "launch",
-            "preLaunchTask": "build",
+            "preLaunchTask": "App1_build",
             // If you have changed target frameworks, make sure to update the program path.
             "program": "${workspaceFolder}/App1/bin/Debug/net6.0/App1.dll",
-            "args": [],
+            "args": ["-in", "${workspaceFolder}/sample_data/test.mp3"],
             "cwd": "${workspaceFolder}/App1",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
+            "name": "App 2 (transcode to opus)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "App2_build",
+            "program": "${workspaceFolder}/App2/bin/Debug/net6.0/App2.dll",
+            "args": ["-in", "${workspaceFolder}/sample_data/test.mp3", "-out", "${workspaceFolder}/generated_data/test.webm"],
+            "cwd": "${workspaceFolder}/App2",
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
+            "name": "App 3 (analyze stream)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "App3_build",
+            "program": "${workspaceFolder}/App3/bin/Debug/net6.0/App3.dll",
+            "args": ["-in", "${workspaceFolder}/generated_data/test.webm"],
+            "cwd": "${workspaceFolder}/App3",
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
+            "name": "App 4 (transcode and analyze stream)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "App4_build",
+            "program": "${workspaceFolder}/App4/bin/Debug/net6.0/App4.dll",
+            "args": ["-in", "${workspaceFolder}/sample_data/test.mp3", "-out", "${workspaceFolder}/generated_data/test.webm"],
+            "cwd": "${workspaceFolder}/App4",
             "console": "internalConsole",
             "stopAtEntry": false
         },
