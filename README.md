@@ -32,7 +32,7 @@ Expected duration: `195000 ms`
 
 This is a stripped down version of App1 for testing FFProbe with a MemoryStream. The input file's data is put into a stream prior to being sent through the FFMpegCore library.
 
-This currently throws an exception regarding an invalid argument when FFMpegCore passes a named pipe to FFProbe.
+Unfortunately this does not seem to work as we want it to due to the encoding used: https://trac.ffmpeg.org/wiki/FFprobeTips#Streamduration
 
 `cd App3`
 
@@ -41,7 +41,7 @@ This currently throws an exception regarding an invalid argument when FFMpegCore
 
 ## App 4 - Transcode and Analyze memory stream together.
 
-This is basically App2 and App3 combined. Many lines are commented, showing testing of options to tweak results.
+This is basically App2 and App3 combined. Many lines are commented, showing testing of options to tweak results. Duration is grabbed from the stderr output that is generated during transcoding operation.
 
 `cd App4`
 
