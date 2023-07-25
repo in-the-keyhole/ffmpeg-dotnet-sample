@@ -23,28 +23,7 @@ class Program
 
                 var outputStream = transcodeToOpusStream(inputStream);
 
-
-                // write to outputFile
                 File.WriteAllBytes(output!, outputStream.ToArray());
-                // var outputFileStream = new FileStream(output!, FileMode.Create, FileAccess.ReadWrite);
-                // outputStream.CopyTo(outputFileStream);
-                // outputFileStream.Flush();
-                // outputFileStream.Position = 0;
-
-                // Now that we have an output file, check the duration of the output file
-
-                // Attempts to use output did not work for me -- using input file for analysis.
-                // Console.WriteLine($"Attempting to analyze {input}");
-                Console.WriteLine($"Attempting to analyze from stream");
-                outputStream.Position = 0;
-                // outputStream.Seek(0, SeekOrigin.Begin);
-                // var x = outputStream;
-                // x.Position = 0;
-                //new StreamPipeSource(outputStream).Source
-                // var analysis = FFProbe.Analyse(outputStream);
-
-                // Console.WriteLine(analysis.Duration);
-                // Console.WriteLine(analysis.Duration.TotalMilliseconds);
 
                 inputStream.Close();
                 outputStream.Close();
@@ -62,44 +41,56 @@ class Program
 
         var outputStream = new MemoryStream();
         var sink = new StreamPipeSink(outputStream);
-
+        
+        var secondToLastLine = "";
+        var lastLine = "";
+        
         FFMpegArguments
             .FromPipeInput(source)
             .OutputToPipe(sink, options => options
-                .WithCustomArgument("-y")
-                .WithCustomArgument("-vn")
-                .WithCustomArgument("-map 0:a")
-                .WithCustomArgument("-c:a libopus")
-                // .WithAudioCodec(FFMpeg.GetCodec("libopus"))
-                .WithAudioBitrate(16)
-                // .WithVariableBitrate(0)
-                .WithCustomArgument("-vbr off")
-                .WithCustomArgument("-application voip")
-                .WithCustomArgument("-recast_media")
-                // .WithCustomArgument("-")
-                // .SelectStream(0)
-                .ForceFormat("webm")
-            )
-        .ProcessSynchronously();
-        return outputStream;
-    }
-
-    // In case we want to provide a stream for both input and output
-    static void transcodeToOpusStream(Stream inputStream, MemoryStream outputStream)
-    {
-        var source = new StreamPipeSource(inputStream);
-        var sink = new StreamPipeSink(outputStream);
-
-        FFMpegArguments
-            .FromPipeInput(source)
-            .OutputToPipe(sink, options => options
+                .WithCustomArgument("-hide_banner") // just to reduce output we are notified about
                 .SelectStream(0)
                 .WithAudioCodec(FFMpeg.GetCodec("libopus"))
                 .WithVariableBitrate(0)
                 .WithAudioBitrate(16)
                 .WithCustomArgument("-application voip")
                 .ForceFormat("webm")
+                
+                // Test arguments
+                // .WithCustomArgument("-y")
+                // .WithCustomArgument("-vn")
+                // .WithCustomArgument("-map 0:a")
+                // .WithCustomArgument("-c:a libopus")
+                // .WithCustomArgument("-vbr off")
+                // .WithCustomArgument("-recast_media")
             )
+            .NotifyOnError(o=>{
+                secondToLastLine = lastLine;
+                lastLine = o;
+            })
         .ProcessSynchronously();
+        
+        // Time should be on the second-to-last line
+        var time = GrabTimeFromOutput(secondToLastLine);
+        Console.WriteLine($"Time is: {time} ms");
+        
+        Console.WriteLine($"...and in milliseconds: {MillisecondsFromTimeString(time)}");
+        
+        return outputStream;
+    }
+    
+    private static string GrabTimeFromOutput(string line)
+    {
+        var needle = " time=";
+        int entry = line.IndexOf(needle);
+        var timeString = line.Substring(entry).TrimStart();
+        timeString = timeString.Split(' ')[0].Split('=')[1];
+        return timeString;
+    }
+    
+    private static double MillisecondsFromTimeString(string time)
+    {
+        var t = TimeOnly.Parse(time);
+        return t.ToTimeSpan().TotalMilliseconds;
     }
 }
