@@ -21,7 +21,10 @@ class Program
             {
                 var inputStream = new FileStream(input!, FileMode.Open, FileAccess.Read);
 
-                var outputStream = transcodeToOpusStream(inputStream);
+                var (outputStream, duration) = transcodeToOpusStream(inputStream);
+                
+                Console.WriteLine($"Time is: {duration}");
+                Console.WriteLine($"...and in milliseconds: {duration.TotalMilliseconds}");
 
                 File.WriteAllBytes(output!, outputStream.ToArray());
 
@@ -35,7 +38,7 @@ class Program
         return await rootCommand.InvokeAsync(args);
     }
 
-    static MemoryStream transcodeToOpusStream(Stream inputStream)
+    static (MemoryStream, TimeSpan) transcodeToOpusStream(Stream inputStream)
     {
         var source = new StreamPipeSource(inputStream);
 
@@ -72,11 +75,9 @@ class Program
         
         // Time should be on the second-to-last line
         var time = GrabTimeFromOutput(secondToLastLine);
-        Console.WriteLine($"Time is: {time} ms");
+        var duration = TimeSpanFromTimeString(time).Duration();
         
-        Console.WriteLine($"...and in milliseconds: {MillisecondsFromTimeString(time)}");
-        
-        return outputStream;
+        return (outputStream, duration);
     }
     
     private static string GrabTimeFromOutput(string line)
@@ -88,9 +89,9 @@ class Program
         return timeString;
     }
     
-    private static double MillisecondsFromTimeString(string time)
+    private static TimeSpan TimeSpanFromTimeString(string time)
     {
         var t = TimeOnly.Parse(time);
-        return t.ToTimeSpan().TotalMilliseconds;
+        return t.ToTimeSpan();
     }
 }
