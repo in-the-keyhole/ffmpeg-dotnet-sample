@@ -47,4 +47,12 @@ This is basically App2 and App3 combined. Many lines are commented, showing test
 
 `dotnet run -in ../sample_data/test.mp3 -out ../generated_data/test-mp3.webm`
 
+## App 5 - Test opus-to-opus, using memory streams
+
+Opus-to-opus file transcoding was hanging, so this is to test out possible solutions to that problem.
+
+`cd App5`
+
+`dotnet run -in ../generated_data/test-wav.webm -out -in ../generated_data/test-mp3.webm -out ../generated_data/test-concat.webm`
+
 
