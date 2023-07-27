@@ -51,7 +51,7 @@ class Program
                     outputStream.Close();
                 }
                 catch (Exception e) {
-                    Console.Error.WriteLine(e.GetBaseException());
+                    Console.Error.WriteLine($"\n\n{e.GetBaseException()}");
                 }
             },
             inputFiles,
@@ -67,10 +67,10 @@ class Program
         var concatFilter = "";
         for(int i = 0; i<numberOfStreams; i++)
         {
-            splitFilter += $"[{i}:0]asplit[v{i}][a{i}];";
-            concatFilter += $"[v{i}][a{i}]";
+            // splitFilter += $"[{i}:0]asplit[v{i}][a{i}];";
+            concatFilter += $"[{i}:0]";
         }
-        concatFilter += $"concat=n={numberOfStreams}:v=0:a={numberOfStreams} [outa]";
+        concatFilter += $"concat=n={numberOfStreams}:v=0:a=1 [outa]";
         return $"{splitFilter}{concatFilter}";
     }
     
@@ -106,7 +106,7 @@ class Program
                 // .SelectStreams(new List<int>{0}, 1, Channel.Audio)
                 // .WithAudioCodec(FFMpeg.GetCodec("libopus"))
                 // .WithVariableBitrate(0)
-                // .WithAudioBitrate(16)
+                // .WithAudioBitrate(48)
                 // .WithCustomArgument("-application voip")
                 .WithCustomArgument($@"-filter_complex ""{complexFilter}""")
                 .WithCustomArgument(@"-map [outa]")

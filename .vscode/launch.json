@@ -78,6 +78,22 @@
             "stopAtEntry": false
         },
         {
+            "name": "App 5 (concat 5 streams)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "App5_build",
+            "program": "${workspaceFolder}/App5/bin/Debug/net6.0/App5.dll",
+            "args": ["-in", "${workspaceFolder}/generated_data/test-wav.webm"
+                    ,"-in", "${workspaceFolder}/generated_data/test-mp3.webm"
+                    ,"-in", "${workspaceFolder}/generated_data/test-wav.webm"
+                    ,"-in", "${workspaceFolder}/generated_data/test-mp3.webm"
+                    ,"-in", "${workspaceFolder}/generated_data/MATT1.webm"
+                    , "-out", "${workspaceFolder}/generated_data/concated.webm"],
+            "cwd": "${workspaceFolder}/App5",
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
             "name": ".NET Core Attach",
             "type": "coreclr",
             "request": "attach"
