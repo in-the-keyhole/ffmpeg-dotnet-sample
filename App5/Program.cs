@@ -3,7 +3,6 @@ using System;
 using System.CommandLine;
 using FFMpegCore;
 using FFMpegCore.Pipes;
-using FFMpegCore.Enums;
 
 class Program
 {
@@ -18,37 +17,42 @@ class Program
         rootCommand.AddOption(outputFile);
         
         // Override option for ffmpeg bin directory
-        GlobalFFOptions.Configure(options =>
-        {
-            options.BinaryFolder = @"C:\software\ffmpeg4_2";
-            options.UseCache = true;
-            options.TemporaryFilesFolder = @"c:\temp";
-            options.WorkingDirectory = @"c:\temp";
-        });
+        // GlobalFFOptions.Configure(options =>
+        // {
+        //     options.BinaryFolder = @"C:\software\ffmpeg4_2";
+        //     options.UseCache = true;
+        //     options.TemporaryFilesFolder = @"c:\temp";
+        //     options.WorkingDirectory = @"c:\temp";
+        // });
 
         // write to stream from ffmpeg, then to file
         rootCommand.SetHandler((input, output) =>
             {
-                var inputStreams = new List<Stream>();
-                foreach(String file in input!)
-                {
-                    Console.WriteLine($"Input : {file}");
-                    inputStreams.Add(new FileStream(file, FileMode.Open, FileAccess.Read));
-                }
-                Console.WriteLine($"Output: {output!}");
-                
-                var (outputStream, duration) = concatenateStreams(inputStreams.ToArray());
-                
-                Console.WriteLine($"Total Time is: {duration}");
-                Console.WriteLine($"...and in milliseconds: {duration.TotalMilliseconds}");
+                try {
+                    var inputStreams = new List<Stream>();
+                    foreach(String file in input!)
+                    {
+                        Console.WriteLine($"Input : {file}");
+                        inputStreams.Add(new FileStream(file, FileMode.Open, FileAccess.Read));
+                    }
+                    Console.WriteLine($"Output: {output!}");
+                    
+                    var (outputStream, duration) = concatenateStreams(inputStreams.ToArray());
+                    
+                    Console.WriteLine($"Total Time is: {duration}");
+                    Console.WriteLine($"...and in milliseconds: {duration.TotalMilliseconds}");
 
-                File.WriteAllBytes(output!, outputStream.ToArray());
+                    File.WriteAllBytes(output!, outputStream.ToArray());
 
-                foreach(Stream s in inputStreams)
-                {
-                    s.Close();
+                    foreach(Stream s in inputStreams)
+                    {
+                        s.Close();
+                    }
+                    outputStream.Close();
                 }
-                outputStream.Close();
+                catch (Exception e) {
+                    Console.Error.WriteLine(e.GetBaseException());
+                }
             },
             inputFiles,
             outputFile
@@ -57,25 +61,23 @@ class Program
         return await rootCommand.InvokeAsync(args);
     }
     
-    // static (MemoryStream, TimeSpan) concatenateStreams(Stream[] streams)
-    // {
-    // }
-    
-    static string BuildConcatFilter(int numberOfStreams)
+    static string BuildComplexFilter(int numberOfStreams)
     {
-        var filterString = "";
+        var splitFilter = "";
+        var concatFilter = "";
         for(int i = 0; i<numberOfStreams; i++)
         {
-            filterString += $"[{i}:0][{i}:0]";
+            splitFilter += $"[{i}:0]asplit[v{i}][a{i}];";
+            concatFilter += $"[v{i}][a{i}]";
         }
-        filterString += $"concat=n={numberOfStreams}:v=0:a={numberOfStreams} [outa]";
-        return filterString;
+        concatFilter += $"concat=n={numberOfStreams}:v=0:a={numberOfStreams} [outa]";
+        return $"{splitFilter}{concatFilter}";
     }
     
     static (MemoryStream, TimeSpan) concatenateStreams(Stream[] streams)
     {
         var numberOfStreams = streams.Length;
-        var complexFilter = BuildConcatFilter(numberOfStreams);
+        var complexFilter = BuildComplexFilter(numberOfStreams);
         
         var inputPipes = new StreamPipeSource[numberOfStreams];
         FFMpegArguments args = null!;
@@ -86,19 +88,11 @@ class Program
             
             if(i == 0)
             {
-                args = FFMpegArguments.FromPipeInput(inputPipes[i], a=>{
-                    // a.ForceFormat("webm");
-                    // a.WithCustomArgument("-hide_banner"); // just to reduce output we are notified about
-                    // a.WithCustomArgument("-vn");
-                });
+                args = FFMpegArguments.FromPipeInput(inputPipes[i]);
             }
             else
             {
-                args.AddPipeInput(inputPipes[i], a=>{
-                    // a.ForceFormat("webm");
-                    // a.SelectStream(0);
-                    // a.WithCustomArgument("-safe");
-                });
+                args.AddPipeInput(inputPipes[i]);
             }
         }
         
@@ -114,57 +108,9 @@ class Program
                 // .WithVariableBitrate(0)
                 // .WithAudioBitrate(16)
                 // .WithCustomArgument("-application voip")
-                // .WithFastStart()
-                // .WithCustomArgument(@"-filter_complex ""[0:a:0][1:a:0]concat=n=2:v=0:a=2 [outa]""")
                 .WithCustomArgument($@"-filter_complex ""{complexFilter}""")
                 .WithCustomArgument(@"-map [outa]")
-                // .WithCustomArgument(@"-map '[outv]'")
-                // .OverwriteExisting()
-                // .WithDuration(TimeSpan.FromSeconds(4.5))
-                // .ForceFormat("webm")
-            )
-            .NotifyOnError(o=>{
-                secondToLastLine = lastLine;
-                lastLine = o;
-            })
-        .ProcessSynchronously();
-        
-        // Time should be on the second-to-last line
-        var time = GrabTimeFromOutput(secondToLastLine);
-        var duration = TimeSpanFromTimeString(time).Duration();
-        
-        return (outputStream, duration);
-    }
-
-    static (MemoryStream, TimeSpan) transcodeToOpusStream(Stream inputStream)
-    {
-        var source = new StreamPipeSource(inputStream);
-
-        var outputStream = new MemoryStream();
-        var sink = new StreamPipeSink(outputStream);
-        
-        var secondToLastLine = "";
-        var lastLine = "";
-        
-        FFMpegArguments
-            .FromPipeInput(source)
-            .OutputToPipe(sink, options => options
-                .WithCustomArgument("-hide_banner") // just to reduce output we are notified about
-                .SelectStream(0)
-                .WithAudioCodec(FFMpeg.GetCodec("libopus"))
-                .WithVariableBitrate(0)
-                .WithAudioBitrate(16)
-                .WithCustomArgument("-application voip")
-                // .WithFastStart()
                 .ForceFormat("webm")
-                
-                // Test arguments
-                // .WithCustomArgument("-y")
-                // .WithCustomArgument("-vn")
-                // .WithCustomArgument("-map 0:a")
-                // .WithCustomArgument("-c:a libopus")
-                // .WithCustomArgument("-vbr off")
-                // .WithCustomArgument("-recast_media")
             )
             .NotifyOnError(o=>{
                 secondToLastLine = lastLine;
@@ -178,7 +124,7 @@ class Program
         
         return (outputStream, duration);
     }
-    
+
     private static string GrabTimeFromOutput(string line)
     {
         var needle = " time=";
